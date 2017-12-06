@@ -5,60 +5,40 @@ from django.db.models import Sum
 from rest_framework.response import Response
 from rest_framework import status
 from rest_framework.views import APIView
+from rest_framework.generics import ListAPIView
 
 from product.models import Item, Rating, Buy, UserItemRelation
-from product.serializers import ItemSerializer
+from product.serializers import ItemSerializer, ItemListSerializer
 from . import messages
 # Create your views here.
 
 
 User = get_user_model()
 
-class ItemView(APIView):
 
-    def get(self, request, *args, **kwargs):
-        """
-        ### GET
 
-        #### Response:
-        ```
-        [
-            {
-                "id": Integer,
-                "name": String,
-                "description": String,
-                "price": Float,
-                "image": URL,
-                "rating": Integer
-            },
-        ]
-        ```
-        """
-        items = Item.objects.all()
-        if items:
-            items_serializer = ItemSerializer(items, many=True)
-            item_data = []
+class ItemView(ListAPIView):
+    """
+    ### GET
 
-            ratings = Rating.objects.all()
+    #### Response:
+    ```
+    [
+        {
+            "id": Integer,
+            "name": String,
+            "description": String,
+            "price": Float,
+            "image": URL,
+            "rating": Integer
+        },
+    ]
+    ```
+    """
+    serializer_class = ItemListSerializer
+    queryset = Item.objects.all()
 
-            for obj in items_serializer.data:
-                user_items = UserItemRelation.objects.filter(item=obj['id'])
-                sum_ = 0
-                count = 0
 
-                if user_items:
-                    for user_item in user_items:
-                        rating = ratings.filter(user_item_relation=user_item)
-                        sum_ += rating.first().rate
-                        count += 1
-                try:
-                    obj['rating'] = sum_ / count
-                except:
-                    obj['rating'] = None
-
-            return Response(items_serializer.data, status=status.HTTP_200_OK)
-        else:
-            return Response(messages.NO_ITEMS, status=status.HTTP_404_NOT_FOUND)
 
 
 class BuyItemView(APIView):
